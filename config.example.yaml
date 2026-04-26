@@ -1,0 +1,43 @@
+capture:
+  source: dxgi
+  monitor_index: 0
+  device_index: 0
+  width: 1920
+  height: 1080
+  crop_width: 0
+  crop_height: 0
+  fps: 60
+  region: null
+
+model:
+  path: yolov8n.pt
+  imgsz: 640
+  conf: 0.35
+  iou: 0.45
+  device: null
+
+target:
+  class_names: []
+  prefer_center: true
+  aim_offset_x: 0.0
+  aim_offset_y: 0.0
+  max_distance_px: 900
+
+mouse:
+  enabled: true
+  hold_to_move: true
+  enable_key: 0x06
+  sensitivity: 0.35
+  smoothing: 0.55
+  deadzone_px: 3
+  max_step_px: 45
+  click_enabled: false
+  click_key: 0x05
+
+runtime:
+  preview: false
+  preview_scale: 0.5
+  preview_initial_width: null
+  preview_initial_height: null
+  print_fps: true
+  quit_key: q

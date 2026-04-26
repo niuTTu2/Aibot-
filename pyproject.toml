@@ -1,0 +1,24 @@
+[project]
+name = "yolo-mouse-controller"
+version = "0.1.0"
+description = "YOLO-based screen/capture-card mouse controller for Windows."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "opencv-python>=4.8",
+    "pyyaml>=6.0",
+    "ultralytics>=8.2",
+    "onnxruntime>=1.17",
+]
+
+[project.optional-dependencies]
+dxgi = ["dxcam>=0.0.5"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+yolo-mouse = "yolo_mouse_controller.app:main"
+yolo-mouse-console = "yolo_mouse_controller.gui:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
