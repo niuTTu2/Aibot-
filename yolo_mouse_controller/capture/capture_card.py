@@ -18,6 +18,8 @@ class CaptureCardSource(FrameSource):
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.config.width)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.config.height)
         self.cap.set(cv2.CAP_PROP_FPS, self.config.fps)
+        # ???????????? OpenCV ?????????????
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         if not self.cap.isOpened():
             raise RuntimeError(f"Cannot open capture device {self.config.device_index}.")
 

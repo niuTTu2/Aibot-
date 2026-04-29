@@ -6,3 +6,5 @@ weights/
 *.pt
 runs/
 .runtime/
+native_console/*.exe
+native_console/*.obj
