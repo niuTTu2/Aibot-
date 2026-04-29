@@ -335,7 +335,7 @@ class ControlConsole:
     def browse_model(self) -> None:
         path = filedialog.askopenfilename(
             title="选择 YOLO 权重",
-            filetypes=[("YOLO / ONNX models", "*.pt *.onnx *.engine"), ("All files", "*.*")],
+            filetypes=[("YOLO / ONNX / TRT models", "*.pt *.onnx *.engine *.trt *.plan"), ("All files", "*.*")],
         )
         if path:
             self.model_path.set(path)

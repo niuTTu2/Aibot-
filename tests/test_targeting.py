@@ -29,6 +29,40 @@ def test_aim_step_applies_deadzone() -> None:
     assert step.dy == 0
 
 
+def test_direct_movement_mode_skips_smoothing() -> None:
+    mouse = MouseConfig(
+        movement_mode="direct",
+        sensitivity=1.0,
+        smoothing=0.9,
+        deadzone_px=0,
+        max_step_px=200,
+    )
+    selector = TargetSelector(TargetConfig(), mouse)
+    target = Detection((418, 238, 422, 242), 0.9, 0, "target")
+
+    step = selector.aim_step(target, frame_width=640, frame_height=480)
+
+    assert step.dx == 100
+    assert step.dy == 0
+
+
+def test_stepped_movement_mode_limits_single_frame_step() -> None:
+    mouse = MouseConfig(
+        movement_mode="stepped",
+        sensitivity=1.0,
+        smoothing=0.0,
+        deadzone_px=0,
+        max_step_px=100,
+    )
+    selector = TargetSelector(TargetConfig(), mouse)
+    target = Detection((518, 238, 522, 242), 0.9, 0, "target")
+
+    step = selector.aim_step(target, frame_width=640, frame_height=480)
+
+    assert step.dx == 45
+    assert step.dy == 0
+
+
 def test_can_prefer_highest_confidence() -> None:
     selector = TargetSelector(TargetConfig(prefer_center=False), MouseConfig())
     detections = [

@@ -3,4 +3,9 @@ opencv-python>=4.8
 pyyaml>=6.0
 ultralytics>=8.2
 dxcam>=0.0.5
-onnxruntime>=1.17
+onnxruntime-gpu>=1.17
+pycuda>=2026.1
+# TensorRT Python package alone is not enough on Windows; nvinfer_10.dll comes from libs.
+tensorrt-cu12-bindings==10.16.1.11
+tensorrt-cu12-libs==10.16.1.11
+pywin32

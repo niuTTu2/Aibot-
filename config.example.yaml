@@ -10,29 +10,77 @@ capture:
   region: null
 
 model:
-  path: yolov8n.pt
+  path: "yolov8n.onnx"
   imgsz: 640
   conf: 0.35
   iou: 0.45
-  device: null
+  device: 0
 
 target:
   class_names: []
   prefer_center: true
-  aim_offset_x: 0.0
-  aim_offset_y: 0.0
+  # aim_offset_y: 0=顶部(锁头), 0.5=中心(锁胸), 1=底部 (相对于目标框高度)
+  aim_offset_x: 0.5
+  aim_offset_y: 0.5
   max_distance_px: 900
 
 mouse:
   enabled: true
   hold_to_move: true
-  enable_key: 0x06
-  sensitivity: 0.35
-  smoothing: 0.55
-  deadzone_px: 3
-  max_step_px: 45
-  click_enabled: false
-  click_key: 0x05
+  backend: sendinput
+  lghub_tool_path: D:\02_Workspace\C\mouse\lghub_mouse_tool\build\lghub_siminput_controller.exe
+  lghub_strict: false
+  lghub_delay_ms: 1
+  lghub_flush_interval_ms: 8
+  movement_mode: adaptive   # adaptive | smooth | eased | stepped | direct
+  # 移动热键（OR 逻辑，任意一个按下即激活瞄准）
+  enable_keys: [0x06]       # 可填多个: [0x06, 0x02]
+  sensitivity: 0.48
+  smoothing: 0.55           # used only in smooth/eased/stepped modes
+  deadzone_px: 1
+  min_step_px: 2
+  max_step_px: 36
+  sticky_radius_px: 90
+  sticky_strength: 1.65
+  micro_accel: true
+  # ??????true=?????false=??????????????????? enable_keys?
+  trigger_enabled: false
+  # --- adaptive mode tuning ---
+  kp: 0.78
+  kp_min: 0.26
+  kp_curve: 0.55
+  kd: 0.04
+  # --- Kalman predictor tuning ---
+  kalman_process_noise: 3.5
+  kalman_measure_noise: 5.0
+  # --- 扳机预设（可配置多个，各自绑定不同热键）---
+  # 武器预设名称: rifle | sniper | pistol | bolt | auto
+  # 也可以用预设名称作为基础，覆盖任意参数
+  triggers: []
+  # 示例：
+  # triggers:
+  #   - name: rifle          # 步枪：按住热键+准心在范围内就持续按住左键
+  #     fire_distance_px: 15 # 准心距中心 <= 15px 才开火
+  #
+  #   - name: sniper         # 狙击：每次进入范围触发一次，离开后才能再次触发
+  #   #     fire_distance_px: 8
+  #
+  #   - name: bolt           # 栓据：开火后等待拉栓冷却
+  #   #     fire_distance_px: 8
+  #     bolt_delay_ms: 1200  # 拉栓时间(ms)
+  #
+  #   - name: pistol         # 手枪/连狙：连点
+  #   #     fire_distance_px: 12
+  #     burst_count: 1
+  #     burst_interval_ms: 100
+  #
+  #   - name: auto           # 全自动：每次进入范围连点3次
+  #   #     fire_distance_px: 15
+  #     burst_count: 3
+  #     burst_interval_ms: 60
+  #
+  #   - name: rifle          # 步枪点射模式：按住N毫秒后松开循环
+  #   #     fire_duration_ms: 150
 
 runtime:
   preview: false
