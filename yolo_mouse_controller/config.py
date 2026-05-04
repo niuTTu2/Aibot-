@@ -20,7 +20,7 @@ class CaptureConfig:
 
 @dataclass
 class ModelConfig:
-    path: str = "yolov8n.onnx"
+    path: str = "models/sample/yolov8n.onnx"
     imgsz: int | tuple[int, int] = 640
     conf: float = 0.35
     iou: float = 0.45
@@ -43,12 +43,25 @@ class TriggerPreset:
     name: str = "rifle"
     # 开火条件：目标距屏幕中心 <= fire_distance_px 才开火
     fire_distance_px: float = 15.0
+    # 开火判定：
+    # distance = 瞄点到准心距离 <= fire_distance_px
+    # area     = 目标检测框与屏幕中心开火区域相交即开火
+    trigger_condition: str = "distance"
+    fire_area_width_px: int = 80
+    fire_area_height_px: int = 80
     # 开火模式
     # hold  — 按住热键+目标在范围内就持续按住左键（步枪）
     # burst — 每次进入范围触发 burst_count 次点击（连狙/手枪/全自动）
     # semi  — 每次目标进入范围触发一次，目标离开后才能再次触发（半自动）
     # bolt  — 开火一次后等待 bolt_delay_ms 冷却（栓据）
     mode: str = "hold"
+    # 每种枪可独立覆盖垂直瞄准点；None 表示沿用全局 target.aim_offset_y
+    aim_offset_y: float | None = None
+    # 压枪补偿：开火时每帧额外向下移动的鼠标单位；0=关闭。
+    recoil_pull_y: float = 0.0
+    # 压枪补偿最大单帧输出，避免设置过大导致下拉过猛。
+    recoil_max_y: float = 8.0
+    settle_delay_ms: int = 0
     # hold 模式：fire_duration_ms=0 表示一直按住；>0 表示按住N毫秒后松开再按（模拟点射）
     fire_duration_ms: int = 0
     # burst/semi/bolt 模式
@@ -63,11 +76,11 @@ class TriggerPreset:
 
 # 内置武器预设库
 WEAPON_PRESETS: dict[str, TriggerPreset] = {
-    "rifle":  TriggerPreset(name="rifle",  mode="hold",  fire_distance_px=15.0, fire_duration_ms=0),
-    "sniper": TriggerPreset(name="sniper", mode="semi",  fire_distance_px=8.0,  burst_count=1),
-    "pistol": TriggerPreset(name="pistol", mode="burst", fire_distance_px=12.0, burst_count=1, burst_interval_ms=100),
-    "bolt":   TriggerPreset(name="bolt",   mode="bolt",  fire_distance_px=8.0,  bolt_delay_ms=1200),
-    "auto":   TriggerPreset(name="auto",   mode="burst", fire_distance_px=15.0, burst_count=3, burst_interval_ms=60),
+    "rifle":  TriggerPreset(name="rifle",  mode="hold",  fire_distance_px=15.0, fire_duration_ms=0, settle_delay_ms=0, aim_offset_y=None, recoil_pull_y=0.0),
+    "sniper": TriggerPreset(name="sniper", mode="semi",  fire_distance_px=8.0,  burst_count=1, settle_delay_ms=90, aim_offset_y=None),
+    "pistol": TriggerPreset(name="pistol", mode="burst", fire_distance_px=12.0, burst_count=1, burst_interval_ms=100, aim_offset_y=None),
+    "bolt":   TriggerPreset(name="bolt",   mode="bolt",  fire_distance_px=8.0,  bolt_delay_ms=1200, settle_delay_ms=140, aim_offset_y=None),
+    "auto":   TriggerPreset(name="auto",   mode="burst", fire_distance_px=15.0, burst_count=3, burst_interval_ms=60, aim_offset_y=None),
 }
 
 
@@ -90,8 +103,23 @@ class MouseConfig:
     max_step_px: int = 36
     sticky_radius_px: int = 90
     sticky_strength: float = 1.65
+    pressure_strength: float = 0.55
+    pressure_cap: float = 2.2
     micro_accel: bool = True
+    prediction_ms: float = 28.0
+    velocity_assist: float = 0.45
+    fast_boost: float = 1.35
+    fast_snap_strength: float = 0.85
+    fast_snap_threshold: float = 0.28
     max_step_boost: float = 1.45   # 大误差时步长倍增上限（1.0=不增强）
+    # ?????????? / ??????????????????????
+    visual_gain_x: float = 0.47
+    visual_gain_y: float = 0.49
+    # 云电脑/采集链路反馈延时补偿：
+    # 控制器会把最近几帧已经发出的鼠标移动临时积分为“虚拟准星偏移”，
+    # 计算下一帧误差时提前抵消还没反馈到截图里的移动量，减少中倍镜滑冰。
+    feedback_delay_frames: int = 3
+    feedback_compensation: float = 0.85
     # 扳机预设列表（可配置多个，各自绑定不同热键）
     trigger_enabled: bool = False
     triggers: list[TriggerPreset] = field(default_factory=list)
@@ -108,6 +136,13 @@ class MouseConfig:
     # Target locking
     lock_target: bool = True        # 锁定目标，防止切换抖动
     lock_miss_frames: int = 2       # 锁定目标消失多少帧后解锁
+    # Weapon profile sync.
+    # hotkey: use each preset's switch_key.
+    # cycle: use host-visible mouse/keyboard buttons to cycle weapon profile.
+    # mixed: both hotkey and cycle.
+    weapon_switch_mode: str = "hotkey"
+    weapon_next_keys: list[int] = field(default_factory=list)
+    weapon_prev_keys: list[int] = field(default_factory=list)
 
 
 @dataclass
@@ -138,6 +173,11 @@ def _merge_dataclass(instance: Any, values: dict[str, Any]) -> Any:
         # 向后兼容：click_enabled + click_key → triggers
         if key in ("click_enabled", "click_key") and isinstance(instance, MouseConfig):
             continue  # 在 load_config 里统一处理
+        if key == "remote_scale" and isinstance(instance, MouseConfig):
+            continue
+        # 忽略已废弃的字段（前端兼容性）
+        if key in ("output_scale_x", "output_scale_y"):
+            continue
         if not hasattr(instance, key):
             raise ValueError(f"Unknown config key: {key}")
         current = getattr(instance, key)
@@ -191,3 +231,4 @@ def load_config(path: str | Path) -> AppConfig:
             mouse_data["triggers"] = [{"name": "pistol", "trigger_keys": [int(click_key)]}]
 
     return _merge_dataclass(cfg, data)
+

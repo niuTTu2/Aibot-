@@ -10,7 +10,7 @@ capture:
   region: null
 
 model:
-  path: "yolov8n.onnx"
+  path: "models/sample/yolov8n.onnx"
   imgsz: 640
   conf: 0.35
   iou: 0.45
@@ -43,8 +43,6 @@ mouse:
   sticky_radius_px: 90
   sticky_strength: 1.65
   micro_accel: true
-  # ??????true=?????false=??????????????????? enable_keys?
-  trigger_enabled: false
   # --- adaptive mode tuning ---
   kp: 0.78
   kp_min: 0.26

@@ -49,7 +49,7 @@ class ControlConsole:
         self.crop_height = IntVar(value=0)
         self.fps = IntVar(value=60)
 
-        self.model_path = StringVar(value="yolov8n.pt")
+        self.model_path = StringVar(value="models/sample/yolov8n.onnx")
         self.imgsz = IntVar(value=640)
         self.conf = DoubleVar(value=0.35)
         self.iou = DoubleVar(value=0.45)
@@ -83,6 +83,9 @@ class ControlConsole:
         self.metric_inference = StringVar(value="-- ms")
         self.metric_total = StringVar(value="-- ms")
         self.metric_fps = StringVar(value="-- FPS")
+
+        # 🔥 修复20：添加配置文件选择
+        self.config_file = StringVar(value="configs/config.example.yaml")
 
         self._setup_style()
         self._build_ui()
@@ -155,6 +158,13 @@ class ControlConsole:
 
         ttk.Button(parent, text="启动控制器", style="Primary.TButton", command=self.start_controller).pack(fill="x", pady=(0, 10))
         ttk.Button(parent, text="停止控制器", style="Danger.TButton", command=self.stop_controller).pack(fill="x", pady=(0, 10))
+
+        # 🔥 修复20：添加配置文件选择按钮
+        config_frame = ttk.Frame(parent, style="Sidebar.TFrame")
+        config_frame.pack(fill="x", pady=(8, 0))
+        ttk.Button(config_frame, text="选择配置文件", style="Tool.TButton", command=self.select_config_file).pack(fill="x")
+        ttk.Label(config_frame, textvariable=self.config_file, style="SideText.TLabel", wraplength=230, font=("Microsoft YaHei UI", 8)).pack(anchor="w", pady=(4, 0))
+
         ttk.Button(parent, text="保存当前配置", style="Tool.TButton", command=self.save_config).pack(fill="x", pady=(8, 0))
         ttk.Button(parent, text="安装/修复依赖", style="Tool.TButton", command=self.install_dependencies).pack(fill="x", pady=(10, 0))
 
@@ -263,7 +273,7 @@ class ControlConsole:
         self._spin(grid, "死区像素", self.deadzone_px, 0, 100, 6)
         self._spin(grid, "单帧最大移动", self.max_step_px, 1, 500, 7)
         self._check(grid, "启用点击", self.click_enabled, 8)
-        self._entry(grid, "点击热键", self.click_key, 9, "默认 0x05 = XBUTTON1")
+        self._entry(grid, "点击热键", self.click_key, 10, "默认 0x05 = XBUTTON1")
 
     def _card(self, parent: ttk.Widget, title: str, hint: str) -> ttk.Frame:
         card = ttk.Frame(parent, style="Card.TFrame", padding=16)
@@ -335,7 +345,7 @@ class ControlConsole:
     def browse_model(self) -> None:
         path = filedialog.askopenfilename(
             title="选择 YOLO 权重",
-            filetypes=[("YOLO / ONNX / TRT models", "*.pt *.onnx *.engine *.trt *.plan"), ("All files", "*.*")],
+            filetypes=[("YOLO / ONNX / TRT models", "*.pt *.onnx *.engine *.trt *.plan *.rtr"), ("All files", "*.*")],
         )
         if path:
             self.model_path.set(path)
@@ -455,6 +465,29 @@ class ControlConsole:
         self._refresh_class_list()
         self.class_status.set("未选择类别；将不过滤")
 
+    def select_config_file(self) -> None:
+        """🔥 修复20：选择配置文件"""
+        path = filedialog.askopenfilename(
+            title="选择配置文件",
+            initialdir=str(PROJECT_ROOT / "configs"),
+            filetypes=[("YAML 配置文件", "*.yaml *.yml"), ("所有文件", "*.*")],
+        )
+        if path:
+            self.config_file.set(path)
+            # 加载配置文件并更新 GUI
+            try:
+                from yolo_mouse_controller.config import load_config
+                config = load_config(path)
+                # 更新 GUI 参数
+                self.sensitivity.set(config.mouse.sensitivity)
+                self.deadzone_px.set(config.mouse.deadzone_px)
+                self.max_step_px.set(config.mouse.max_step_px)
+                self.width.set(config.capture.width)
+                self.height.set(config.capture.height)
+                messagebox.showinfo("配置已加载", f"已加载配置文件：\n{path}\n\n请检查参数是否正确。")
+            except Exception as e:
+                messagebox.showerror("加载失败", f"无法加载配置文件：\n{e}")
+
     def install_dependencies(self) -> None:
         if self.process is not None:
             messagebox.showwarning("正在运行", "请先停止当前控制器。")
@@ -506,7 +539,7 @@ class ControlConsole:
                 "region": None,
             },
             "model": {
-                "path": self.model_path.get().strip() or "yolov8n.pt",
+                "path": self.model_path.get().strip() or "models/sample/yolov8n.onnx",
                 "imgsz": self.imgsz.get(),
                 "conf": round(float(self.conf.get()), 3),
                 "iou": round(float(self.iou.get()), 3),
@@ -656,3 +689,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+

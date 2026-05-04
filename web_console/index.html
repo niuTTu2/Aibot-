@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>YOLO Mouse Console</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">YM</div>
+          <div>
+            <h1>YOLO Mouse</h1>
+            <p>Vision Control Console</p>
+          </div>
+        </div>
+
+        <nav class="nav-stack" aria-label="主导航">
+          <button class="nav-item active" type="button" data-view="overview"><span>总览</span></button>
+          <button class="nav-item" type="button" data-view="capture"><span>采集</span></button>
+          <button class="nav-item" type="button" data-view="model"><span>模型</span></button>
+          <button class="nav-item" type="button" data-view="mouse"><span>鼠标</span></button>
+          <button class="nav-item" type="button" data-view="logs"><span>日志</span></button>
+        </nav>
+
+        <div class="sidebar-status">
+          <div class="status-line">
+            <span id="statusDot" class="status-dot"></span>
+            <span id="statusText">等待启动</span>
+          </div>
+          <strong id="runStatus">未启动</strong>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">LOCAL SERVICE</p>
+            <h2 id="viewTitle">运行总览</h2>
+          </div>
+          <div class="topbar-actions">
+            <button id="importBtn" class="btn" type="button" title="导入配置" style="margin-right: 8px;">导入配置</button>
+            <button id="exportBtn" class="btn" type="button" title="导出配置" style="margin-right: 8px;">导出配置</button>
+            <button id="saveBtn" class="btn secondary" type="button">保存配置</button>
+            <button id="startBtn" class="btn primary" type="button">启动控制器</button>
+            <button id="stopBtn" class="btn danger" type="button">停止</button>
+          </div>
+        </header>
+
+        <section class="metric-strip" aria-label="运行指标">
+          <div class="metric-tile">
+            <span>截图延时</span>
+            <strong id="metricCapture">-- ms</strong>
+          </div>
+          <div class="metric-tile">
+            <span>推理延时</span>
+            <strong id="metricInference">-- ms</strong>
+          </div>
+          <div class="metric-tile">
+            <span>端到端延时</span>
+            <strong id="metricTotal">-- ms</strong>
+          </div>
+          <div class="metric-tile">
+            <span>总帧率</span>
+            <strong id="metricFps">-- FPS</strong>
+          </div>
+        </section>
+
+        <section class="view-panel active" data-view-panel="overview">
+          <div class="overview-layout">
+            <section class="panel hero-panel">
+              <div class="hero-copy">
+                <p class="eyebrow">READY</p>
+                <h3>本地视觉鼠标控制台</h3>
+              </div>
+              <div class="hero-actions">
+                <button id="installBtn" class="btn secondary" type="button">安装依赖</button>
+                <button id="scanDevicesBtn" class="btn secondary" type="button">扫描设备</button>
+              </div>
+              <div class="signal-wave" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
+            </section>
+
+            <section class="panel quick-panel">
+              <div class="panel-heading">
+                <h3>快速入口</h3>
+              </div>
+              <div class="quick-grid">
+                <button class="quick-card" type="button" data-view="capture"><span>采集源</span><strong>DXGI / 采集卡</strong></button>
+                <button class="quick-card" type="button" data-view="model"><span>识别模型</span><strong>PT / ONNX</strong></button>
+                <button class="quick-card" type="button" data-view="mouse"><span>鼠标输出</span><strong>移动模式 / 测试</strong></button>
+                <button class="quick-card" type="button" data-view="logs"><span>运行日志</span><strong>指标 / 错误</strong></button>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view-panel" data-view-panel="capture">
+          <section class="panel">
+            <div class="panel-heading">
+              <h3>画面采集</h3>
+            </div>
+            <div class="form-grid">
+              <label>输入来源<select id="source"><option value="dxgi">DXGI 单机采集</option><option value="capture_card">采集卡 / 摄像头</option></select></label>
+              <label>显示器编号<input id="monitorIndex" type="number" min="0" max="8" /></label>
+              <label>采集卡设备号<input id="deviceIndex" type="number" min="0" max="16" /></label>
+              <label>输入宽度<input id="width" type="number" min="320" /></label>
+              <label>输入高度<input id="height" type="number" min="240" /></label>
+              <label>目标帧率<input id="fps" type="number" min="1" max="240" /></label>
+              <label>中心截取宽度<input id="cropWidth" type="number" min="0" /></label>
+              <label>中心截取高度<input id="cropHeight" type="number" min="0" /></label>
+            </div>
+            <div class="switch-row">
+              <label><input id="preview" type="checkbox" /> 显示预览窗口</label>
+              <label><input id="printFps" type="checkbox" /> 输出指标日志</label>
+            </div>
+            <label class="range-row">预览缩放 <input id="previewScale" type="range" min="0.1" max="1" step="0.05" /><span id="previewScaleText">0.50</span></label>
+          </section>
+        </section>
+
+        <section class="view-panel" data-view-panel="model">
+          <section class="panel">
+            <div class="panel-heading split">
+              <h3>模型与目标</h3>
+              <div class="panel-actions">
+                <button id="browseModelBtn" class="btn secondary" type="button">选择模型</button>
+                <button id="loadClassesBtn" class="btn secondary" type="button">读取类别</button>
+              </div>
+            </div>
+            <label class="wide-field">模型路径（.onnx / .engine / .trt）<input id="modelPath" type="text" placeholder="D:\path\model.onnx 或 model.engine" /></label>
+            <div class="form-grid">
+              <label>推理尺寸<input id="imgsz" type="number" min="32" /></label>
+              <label>置信度<input id="conf" type="number" min="0.01" max="1" step="0.01" /></label>
+              <label>IOU<input id="iou" type="number" min="0.01" max="1" step="0.01" /></label>
+              <label>推理设备<select id="device"><option value="">Auto</option><option value="cpu">CPU</option></select></label>
+              <label title="基于宽度的水平瞄准点：支持输入 0 到 1 的比例（0代表左侧，0.5代表中心，1代表右测）。">水平瞄准点 aim_offset_x<input id="aimOffsetX" type="number" min="0" max="1" step="0.05" /></label>
+              <label title="基于高度的垂直瞄准点：支持输入 0 到 1 的比例（0代表顶部边缘，0.5代表中心，1代表底部），更直观地调整锁胸/锁头。">垂直瞄准点 aim_offset_y<input id="aimOffsetY" type="number" min="0" max="1" step="0.05" /></label>
+              <label>最大锁定距离<input id="maxDistance" type="number" min="10" /></label>
+              <label>类别选择模式<select id="classMode"><option value="multi">多选</option><option value="single">单选</option></select></label>
+            </div>
+            <div class="switch-row">
+              <label><input id="preferCenter" type="checkbox" /> 优先中心附近目标</label>
+            </div>
+            <div class="class-toolbar">
+              <span id="classSummary">未读取类别；空选表示不过滤</span>
+              <button id="selectAllClasses" class="mini-btn" type="button">全选</button>
+              <button id="clearClasses" class="mini-btn" type="button">清空</button>
+            </div>
+            <div id="classGrid" class="class-grid"></div>
+          </section>
+        </section>
+
+        <section class="view-panel" data-view-panel="mouse">
+          <section class="panel">
+            <div class="panel-heading split">
+              <h3>鼠标输出</h3>
+              <div style="display: flex; gap: 8px;">
+                <button id="mouseTestBtn" class="btn accent" type="button">鼠标移动测试</button>
+              </div>
+            </div>
+            <div class="switch-row stacked">
+              <label><input id="mouseEnabled" type="checkbox" /> 启用鼠标移动</label>
+              <label><input id="holdToMove" type="checkbox" /> 按住热键时才移动</label>
+            </div>
+            <div class="form-grid">
+              <label>控制后端<select id="mouseBackend"><option value="sendinput">Windows SendInput（已实现）</option><option value="lghub_siminput">罗技 G HUB siminput（stream 已实现）</option><option value="logitech_driver">罗技驱动直连（实验预留）</option><option value="logitech_lua">罗技 G HUB Lua（预留）</option><option value="hid_serial">HID 串口设备（预留）</option></select></label>
+              <label>移动曲线<select id="movementMode"><option value="adaptive">自适应 PD（推荐）</option><option value="smooth">平滑跟随</option><option value="direct">直接移动</option><option value="eased">缓动稳定</option><option value="stepped">分段控速</option></select></label>
+              <label>LGHUB 工具路径<input id="lghubToolPath" type="text" /></label>
+              <label>LGHUB 移动延时 ms<input id="lghubDelay" type="number" min="0" max="60000" /></label>
+              <label>LGHUB 发送间隔 ms<input id="lghubFlushInterval" type="number" min="1" max="1000" /></label>
+              <label title="多个热键用逗号分隔，如 0x06,0x02">移动热键
+                <div style="display:flex;gap:4px">
+                  <input id="enableKeys" type="text" placeholder="0x06" style="flex:1" />
+                  <button type="button" class="mini-btn" onclick="openKeyPicker('enableKeys',true)">选择</button>
+                </div>
+              </label>
+              <label>灵敏度<input id="sensitivity" type="number" min="0.01" step="0.01" /></label>
+              <label>平滑（非 adaptive 模式）<input id="smoothing" type="number" min="0" max="0.95" step="0.01" /></label>
+              <label>死区像素<input id="deadzone" type="number" min="0" /></label>
+              <label title="死区前最小校正步长">最小校正步长 min_step_px<input id="minStep" type="number" min="0" max="20" /></label>
+              <label>单帧最大移动<input id="maxStep" type="number" min="1" /></label>
+              <label title="大误差时步长倍增上限，1.0=不增强，2.0=最多翻倍">步长增强上限<input id="maxStepBoost" type="number" min="1" max="5" step="0.1" /></label>
+            </div>
+            <div class="switch-row">
+              <label><input id="lghubStrict" type="checkbox" /> LGHUB 严格确认 SUCCESS</label>
+              <label><input id="lockTarget" type="checkbox" /> 锁定目标（防切换抖动）</label>
+              <label>丢锁容错帧数<input id="lockMissFrames" type="number" min="1" max="30" /></label>
+              <label><input id="triggerEnabled" type="checkbox" /> 总扳机开关（使用移动热键触发）</label>
+            </div>
+                        <section class="weapon-status-card">
+              <div class="weapon-status-main">
+                <span class="weapon-label">当前枪械</span>
+                <strong id="activeWeaponName">--</strong>
+                <small id="activeWeaponAim">aim_offset_y: --</small>
+              </div>
+              <div class="weapon-switch-grid">
+                <label>切枪同步方式
+                  <select id="weaponSwitchMode">
+                    <option value="cycle">鼠标键循环</option>
+                    <option value="hotkey">切枪热键</option>
+                    <option value="mixed">两者都启用</option>
+                  </select>
+                </label>
+                <label title="宿主能收到的按键，推荐鼠标侧键。多个用逗号分隔，例如 0x05,0x06">下一武器同步键
+                  <div style="display:flex;gap:4px">
+                    <input id="weaponNextKeys" type="text" placeholder="0x05" style="flex:1" />
+                    <button type="button" class="mini-btn" onclick="openKeyPicker('weaponNextKeys',true)">选择</button>
+                  </div>
+                </label>
+                <label title="可选。上一武器同步键，多个用逗号分隔">上一武器同步键
+                  <div style="display:flex;gap:4px">
+                    <input id="weaponPrevKeys" type="text" placeholder="" style="flex:1" />
+                    <button type="button" class="mini-btn" onclick="openKeyPicker('weaponPrevKeys',true)">选择</button>
+                  </div>
+                </label>
+              </div>
+            </section>
+            <details style="margin-top:12px">
+              <summary style="cursor:pointer;font-weight:600;padding:4px 0">极简 PD 控制器参数（v2 终极版）</summary>
+              <div class="form-grid" style="margin-top:8px">
+                <label title="远距离时的最大比例增益，越大追踪越激进（建议 0.8~1.5）">比例增益 kp<input id="kp" type="number" min="0.01" max="5" step="0.01" /></label>
+                <label title="近距离时的最小增益，防止停滞（建议 0.2~0.4）">最小增益 kp_min<input id="kpMin" type="number" min="0.01" max="1" step="0.01" /></label>
+                <label title="速度前馈增益（同向追击），越大越能跟上高速移动目标（建议 0.5~1.0）">速度前馈 kd<input id="kd" type="number" min="0" max="2" step="0.01" /></label>
+                <label title="非线性增益过渡半径，越大越平滑（建议 30~80）">吸附半径 px<input id="stickyRadius" type="number" min="0" max="300" /></label>
+                <label title="越高越信任速度预测，适合快速目标（建议 3.0~8.0）">Kalman 过程噪声<input id="kalmanProcess" type="number" min="0.1" max="100" step="0.5" /></label>
+                <label title="越高越平滑但延迟更大">Kalman 测量噪声<input id="kalmanMeasure" type="number" min="0.1" max="100" step="0.5" /></label>
+                <label title="目标突然跳变时重置阈值（标准差倍数），越小越灵敏">Kalman 跳变门限 sigma<input id="kalmanGate" type="number" min="1" max="20" step="0.5" /></label>
+              </div>
+            </details>
+            <details style="margin-top:12px" open>
+              <summary style="cursor:pointer;font-weight:600;padding:4px 0">扳机配置</summary>
+              <div style="margin-top:10px">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+                  <button id="addTriggerBtn" class="btn accent" type="button" style="font-size:0.85em">+ 添加扳机</button>
+                  <button id="loadDeltaPresetBtn" class="mini-btn" type="button" style="font-size:0.82em">载入三角洲默认预设</button>
+                  <button id="clearTriggersBtn" class="mini-btn" type="button" style="font-size:0.82em">清空全部</button>
+                </div>
+                <div id="triggerList" style="display:flex;flex-direction:column;gap:10px"></div>
+                <p id="triggersJsonError" style="color:#e55;font-size:0.82em;margin:4px 0 0"></p>
+              </div>
+            </details>
+          </section>
+          <section class="panel mouse-diagnostics-panel">
+            <div class="panel-heading split">
+              <h3>鼠标状态与指令日志</h3>
+              <span class="log-badge">MOUSE</span>
+            </div>
+            <div class="mouse-state-grid">
+              <div class="state-chip">
+                <span>状态</span>
+                <strong id="mouseRuntimeState">等待数据</strong>
+              </div>
+              <div class="state-chip">
+                <span>热键</span>
+                <strong id="mouseRuntimeHotkey">--</strong>
+              </div>
+              <div class="state-chip">
+                <span>最后指令</span>
+                <strong id="mouseRuntimeCommand">--</strong>
+              </div>
+            </div>
+            <pre id="mouseLogs" class="mouse-log-output">等待控制器输出鼠标状态...</pre>
+          </section>
+        </section>
+
+        <section class="view-panel" data-view-panel="logs">
+          <section class="panel logs-panel">
+            <div class="panel-heading split">
+              <h3>运行日志</h3>
+              <button id="clearLogsBtn" class="mini-btn" type="button">清空日志</button>
+            </div>
+            <pre id="logs"></pre>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <!-- 热键选择弹窗 -->
+    <div id="keyPickerModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.7);align-items:center;justify-content:center">
+      <div style="background:var(--surface,#141414);border:1px solid var(--border,#333);border-radius:12px;padding:20px 24px;width:min(680px,96vw);max-height:90vh;overflow-y:auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <h3 style="margin:0;font-size:1em">选择热键</h3>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span id="keyPickerCapturing" style="display:none;font-size:0.82em;color:var(--accent,#e8a020);animation:blink 1s step-end infinite">• 按下任意键盘按键捕获...</span>
+            <button id="keyPickerCaptureBtn" class="mini-btn" type="button">键盘捕获</button>
+            <button id="keyPickerClose" class="mini-btn" type="button" style="color:#e55;border-color:#e55">关闭</button>
+          </div>
+        </div>
+        <p style="font-size:0.8em;color:var(--text-muted,#888);margin:0 0 12px">点击按键将其添加到输入框，支持多选。已选中的键再次点击可取消。</p>
+        <div id="keyPickerGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:5px"></div>
+      </div>
+    </div>
+
+
+    <script src="/app.js"></script>
+  </body>
+</html>

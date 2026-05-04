@@ -1,0 +1,54 @@
+# Optional GPU notes
+
+## PyTorch / .pt
+
+Install a CUDA-enabled PyTorch build that matches this venv's Python version.
+
+Example for Python 3.12 + CUDA 12.6:
+
+```powershell
+python -m pip install --force-reinstall torch torchvision --index-url https://download.pytorch.org/whl/cu126
+```
+
+If `torch_python.dll` fails with WinError 126, check the wheel tag:
+
+```powershell
+Get-Content .venv\Lib\site-packages\torch-*\WHEEL
+```
+
+The tag must match the venv, for example `cp312-cp312-win_amd64` for Python 3.12.
+
+## ONNX Runtime / .onnx
+
+For NVIDIA GPU, install `onnxruntime-gpu`.
+
+```powershell
+python -m pip install onnxruntime-gpu
+```
+
+`ort.get_available_providers()` should include:
+
+```text
+CUDAExecutionProvider
+```
+
+## TensorRT / .engine / .trt / .plan
+
+The plain `tensorrt` package may not include runtime DLLs. On Windows,
+`nvinfer_10.dll` is provided by `tensorrt-cu12-libs`.
+
+```powershell
+python -m pip install tensorrt-cu12-bindings==10.16.1.11 tensorrt-cu12-libs==10.16.1.11 pycuda
+```
+
+Verify:
+
+```powershell
+python - <<'PY'
+import torch, onnxruntime as ort, tensorrt as trt, pycuda.driver as cuda, pycuda.autoinit
+print(torch.__version__, torch.cuda.is_available())
+print(ort.get_available_providers())
+print(trt.__version__)
+print(cuda.Device(0).name())
+PY
+```

@@ -1,0 +1,81 @@
+{
+  "capture": {
+    "source": "dxgi",
+    "monitor_index": 0,
+    "device_index": 0,
+    "width": 1920,
+    "height": 1080,
+    "crop_width": 0,
+    "crop_height": 0,
+    "fps": 60,
+    "region": null
+  },
+  "model": {
+    "path": "models/sample/yolov8n.onnx",
+    "imgsz": 640,
+    "conf": 0.35,
+    "iou": 0.45,
+    "device": 0
+  },
+  "target": {
+    "class_names": [],
+    "prefer_center": true,
+    "aim_offset_x": 0.5,
+    "aim_offset_y": 0.5,
+    "max_distance_px": 900
+  },
+  "mouse": {
+    "enabled": true,
+    "hold_to_move": true,
+    "backend": "sendinput",
+    "movement_mode": "adaptive",
+    "lghub_tool_path": "D:\\02_Workspace\\C\\mouse\\lghub_mouse_tool\\build\\lghub_siminput_controller.exe",
+    "lghub_strict": false,
+    "lghub_delay_ms": 1,
+    "lghub_flush_interval_ms": 8,
+    "enable_keys": [
+      6
+    ],
+    "sensitivity": 0.48,
+    "smoothing": 0.55,
+    "deadzone_px": 1,
+    "min_step_px": 2,
+    "max_step_px": 36,
+    "max_step_boost": 1.45,
+    "sticky_radius_px": 90,
+    "sticky_strength": 1.65,
+    "pressure_strength": 0.55,
+    "pressure_cap": 2.2,
+    "micro_accel": true,
+    "prediction_ms": 28,
+    "velocity_assist": 0.45,
+    "fast_boost": 1.35,
+    "fast_snap_strength": 0.85,
+    "fast_snap_threshold": 0.28,
+    "trigger_enabled": false,
+    "triggers": [],
+    "kp": 0.78,
+    "kp_min": 0.26,
+    "kp_curve": 0.55,
+    "kd": 0.04,
+    "kd_max_ratio": 0.15,
+    "kalman_process_noise": 3.5,
+    "kalman_measure_noise": 5.0,
+    "kalman_gate_sigma": 2.5,
+    "lock_target": true,
+    "lock_miss_frames": 2,
+    "weapon_switch_mode": "cycle",
+    "weapon_next_keys": [
+      5
+    ],
+    "weapon_prev_keys": []
+  },
+  "runtime": {
+    "preview": false,
+    "preview_scale": 0.5,
+    "preview_initial_width": 1920,
+    "preview_initial_height": 1080,
+    "print_fps": true,
+    "quit_key": "q"
+  }
+}

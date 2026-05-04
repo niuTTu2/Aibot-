@@ -180,11 +180,8 @@ class YoloDetector:
 
         # Perform C++ NMS directly via DLL hook avoiding Python loop entirely
         if _fast_nms is not None:
-             # ONNX might output float16. C++ DLL expects float32. C++ crashes if pointer jumps 4 bytes while data is 2 bytes.
-             if preds.dtype != np.float32:
-                 preds = np.ascontiguousarray(preds).astype(np.float32)
-             else:
-                 preds = np.ascontiguousarray(preds)
+             # Force contiguous float32 to prevent C++ Access Violation if array is strided or float16
+             preds = np.ascontiguousarray(preds, dtype=np.float32)
                  
              preds_c = preds.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
              out_c = self._out_buffer.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
@@ -192,8 +189,11 @@ class YoloDetector:
              num_det = _fast_nms.run_yolov8_nms(
                  preds_c, num_classes, num_anchors, 
                  float(self.config.conf), float(self.config.iou), 
-                 out_c, self._max_out
+                 out_c, ctypes.c_int(self._max_out)
              )
+             
+             # Safely clamp num_det to prevent unexpected memory reads
+             num_det = min(num_det, self._max_out)
              
              detections = []
              for i in range(num_det):

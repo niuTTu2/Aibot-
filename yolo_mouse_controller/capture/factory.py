@@ -10,7 +10,11 @@ from .dxgi import DxgiSource
 def create_frame_source(config: CaptureConfig) -> FrameSource:
     source = config.source.lower()
     if source == "dxgi":
-        return DxgiSource(config)
-    if source in {"capture_card", "card", "camera", "opencv"}:
-        return CaptureCardSource(config)
-    raise ValueError(f"Unsupported capture source: {config.source}")
+        raw = DxgiSource(config)
+    elif source in {"capture_card", "card", "camera", "opencv"}:
+        raw = CaptureCardSource(config)
+    else:
+        raise ValueError(f"Unsupported capture source: {config.source}")
+
+    from yolo_mouse_controller.capture.base import ThreadedFrameSource
+    return ThreadedFrameSource(raw)

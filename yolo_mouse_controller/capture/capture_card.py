@@ -14,7 +14,14 @@ class CaptureCardSource(FrameSource):
         self.cap: cv2.VideoCapture | None = None
 
     def start(self) -> None:
-        self.cap = cv2.VideoCapture(self.config.device_index, cv2.CAP_DSHOW)
+        idx = self.config.device_index
+        print(f"Opening capture device {idx} with MSMF (ultra-low latency)")
+        # v2: MSMF 底层加速，替代由于 DirectShow 带来的 2 帧缓冲延时 (Todo 4)
+        self.cap = cv2.VideoCapture(idx, cv2.CAP_MSMF)
+        if not self.cap.isOpened():
+            print(f"MSMF failed, falling back to DSHOW for id={idx}")
+            self.cap = cv2.VideoCapture(idx, cv2.CAP_DSHOW)
+            
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.config.width)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.config.height)
         self.cap.set(cv2.CAP_PROP_FPS, self.config.fps)

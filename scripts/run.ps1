@@ -1,9 +1,9 @@
-param(
+﻿param(
     [switch]$Install,
     [switch]$Preview,
     [ValidateSet("dxgi", "capture_card")]
     [string]$Source = "",
-    [string]$Config = "config.example.yaml"
+    [string]$Config = "configs/config.example.yaml"
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,14 +44,13 @@ function Get-Python {
     }
 
     throw @"
-没有找到 Python。
+未找到可用的 Python。
 
-推荐安装方式：
+推荐先执行：
   .\scripts\install-python.ps1
 
-安装后请重新打开 PowerShell，然后运行：
-  .\scripts\run.ps1 -Install
-  .\scripts\run.ps1 -Preview
+或确认以下路径存在：
+  D:\06_Environment\python\python.exe
 "@
 }
 

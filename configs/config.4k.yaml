@@ -1,0 +1,63 @@
+capture:
+  source: dxgi
+  monitor_index: 0
+  device_index: 0
+  width: 3840      # 4K 分辨率
+  height: 2160     # 4K 分辨率
+  crop_width: 0
+  crop_height: 0
+  fps: 60
+  region: null
+
+model:
+  path: "models/sample/yolov8n.onnx"
+  imgsz: 640
+  conf: 0.35
+  iou: 0.45
+  device: 0
+
+target:
+  class_names: []
+  prefer_center: true
+  # aim_offset_y: 0=顶部(锁头), 0.5=中心(锁胸), 1=底部 (相对于目标框高度)
+  aim_offset_x: 0.5
+  aim_offset_y: 0.5
+  max_distance_px: 1800    # 4K: 900 × 2 = 1800
+
+mouse:
+  enabled: true
+  hold_to_move: true
+  backend: sendinput
+  lghub_tool_path: D:\02_Workspace\C\mouse\lghub_mouse_tool\build\lghub_siminput_controller.exe
+  lghub_strict: false
+  lghub_delay_ms: 1
+  lghub_flush_interval_ms: 8
+  movement_mode: adaptive   # adaptive | smooth | eased | stepped | direct
+  # 移动热键（OR 逻辑，任意一个按下即激活瞄准）
+  enable_keys: [0x06]       # 可填多个: [0x06, 0x02]
+  sensitivity: 0.48         # 保持不变（这是比例，不是像素）
+  smoothing: 0.55           # used only in smooth/eased/stepped modes
+  deadzone_px: 2            # 4K: 1 × 2 = 2
+  min_step_px: 4            # 4K: 2 × 2 = 4
+  max_step_px: 72           # 4K: 36 × 2 = 72
+  sticky_radius_px: 180     # 4K: 90 × 2 = 180
+  sticky_strength: 1.65     # 保持不变（这是比例）
+  micro_accel: true
+  trigger_enabled: false
+  # --- adaptive mode tuning ---
+  kp: 0.78                  # 保持不变
+  kp_min: 0.26              # 保持不变
+  kp_curve: 0.55            # 保持不变
+  kd: 0.04                  # 保持不变
+  # --- Kalman predictor tuning ---
+  kalman_process_noise: 3.5
+  kalman_measure_noise: 5.0
+  triggers: []
+
+runtime:
+  preview: false
+  preview_scale: 0.5
+  preview_initial_width: null
+  preview_initial_height: null
+  print_fps: true
+  quit_key: q
