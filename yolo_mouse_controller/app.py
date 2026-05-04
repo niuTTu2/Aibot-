@@ -226,7 +226,7 @@ def run(config: AppConfig) -> None:
                 last_mouse_state = mouse_state
                 last_mouse_status_at = now
 
-            if not should_move or target is None or (step.dx == 0 and step.dy == 0):
+            if not should_move or (step.dx == 0 and step.dy == 0):
                 if hasattr(mouse, "clear_pending_move"):
                     mouse.clear_pending_move()
 

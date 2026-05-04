@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from math import hypot, sqrt
 
 import numpy as np
@@ -63,9 +63,10 @@ class _KalmanTracker:
         # Mahalanobis distance squared
         try:
             S_inv = np.linalg.inv(S)
-            mahal_sq = float(innov @ S_inv @ innov)
         except np.linalg.LinAlgError:
-            mahal_sq = 0.0
+            # Fallback for near-singular covariance.
+            S_inv = np.linalg.pinv(S)
+        mahal_sq = float(innov @ S_inv @ innov)
 
         gate_sq = self._gate_sigma ** 2
         if mahal_sq > gate_sq:
@@ -229,13 +230,19 @@ class TargetSelector:
         center_x = frame_width / 2.0
         center_y = frame_height / 2.0
 
+        resolved_target = target
         if target is None:
-            self._kalman.reset()
-            self._reset_state()
-            return AimStep(0, 0, None)
-
-        raw_x, raw_y = self._aim_point(target)
-        aim_x, aim_y = self._kalman.update(raw_x, raw_y)
+            predicted = self._kalman.predict_miss()
+            if predicted is None:
+                self._reset_state()
+                return AimStep(0, 0, None)
+            aim_x, aim_y = predicted
+            if self._locked is not None:
+                # Preserve last target metadata for preview/logging during short misses.
+                resolved_target = replace(self._locked)
+        else:
+            raw_x, raw_y = self._aim_point(target)
+            aim_x, aim_y = self._kalman.update(raw_x, raw_y)
 
         error_x = aim_x - center_x
         error_y = aim_y - center_y
@@ -244,7 +251,7 @@ class TargetSelector:
         deadzone = max(0, int(self.mouse_config.deadzone_px))
         if dist <= deadzone:
             self._reset_state()
-            return AimStep(0, 0, target)
+            return AimStep(0, 0, resolved_target)
 
         max_step = max(1, int(self.mouse_config.max_step_px))
         max_dist = max(frame_width, frame_height) * 0.5
@@ -349,7 +356,7 @@ class TargetSelector:
             if dy == 0 and abs(error_y) > deadzone:
                 dy = min_step if error_y > 0 else -min_step
 
-        return AimStep(dx, dy, target)
+        return AimStep(dx, dy, resolved_target)
 
     def _reset_state(self) -> None:
         self._smooth_dx = 0.0

@@ -74,3 +74,21 @@ def test_can_prefer_highest_confidence() -> None:
 
     assert target is not None
     assert target.confidence == 0.99
+
+
+def test_adaptive_mode_keeps_predicting_for_short_miss() -> None:
+    mouse = MouseConfig(
+        movement_mode="adaptive",
+        sensitivity=1.0,
+        deadzone_px=0,
+        max_step_px=200,
+        kd=0.0,
+    )
+    selector = TargetSelector(TargetConfig(), mouse)
+    target = Detection((418, 238, 422, 242), 0.9, 0, "target")
+
+    first = selector.aim_step(target, frame_width=640, frame_height=480)
+    miss = selector.aim_step(None, frame_width=640, frame_height=480)
+
+    assert first.dx != 0 or first.dy != 0
+    assert miss.dx != 0 or miss.dy != 0
