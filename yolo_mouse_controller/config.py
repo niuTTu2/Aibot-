@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+import warnings
 
 
 @dataclass
@@ -138,8 +139,15 @@ def _merge_dataclass(instance: Any, values: dict[str, Any]) -> Any:
         # 向后兼容：click_enabled + click_key → triggers
         if key in ("click_enabled", "click_key") and isinstance(instance, MouseConfig):
             continue  # 在 load_config 里统一处理
+        # 向后兼容：旧参数名映射到新参数名
+        if isinstance(instance, MouseConfig):
+            if key == "pressure_strength":
+                key = "sticky_strength"
+            elif key == "pressure_radius_px":
+                key = "sticky_radius_px"
         if not hasattr(instance, key):
-            raise ValueError(f"Unknown config key: {key}")
+            warnings.warn(f"Unknown config key ignored: {key}", RuntimeWarning, stacklevel=2)
+            continue
         current = getattr(instance, key)
         if hasattr(current, "__dataclass_fields__") and isinstance(value, dict):
             _merge_dataclass(current, value)
